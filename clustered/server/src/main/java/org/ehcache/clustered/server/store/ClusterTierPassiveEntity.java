@@ -30,6 +30,7 @@ import org.ehcache.clustered.common.internal.store.ClusterTierEntityConfiguratio
 import org.ehcache.clustered.server.KeySegmentMapper;
 import org.ehcache.clustered.server.ServerSideServerStore;
 import org.ehcache.clustered.server.internal.messages.EhcacheDataSyncMessage;
+import org.ehcache.clustered.server.internal.messages.EhcacheMessageTrackerMessage;
 import org.ehcache.clustered.server.internal.messages.EhcacheStateRepoSyncMessage;
 import org.ehcache.clustered.server.internal.messages.EhcacheSyncMessage;
 import org.ehcache.clustered.server.internal.messages.PassiveReplicationMessage;
@@ -205,6 +206,11 @@ public class ClusterTierPassiveEntity implements PassiveServerEntity<EhcacheEnti
         EhcacheStateRepoSyncMessage stateRepoSyncMessage = (EhcacheStateRepoSyncMessage) message;
         stateService.getStateRepositoryManager().processSyncMessage(stateRepoSyncMessage);
         break;
+      case MESSAGE_TRACKER:
+        EhcacheMessageTrackerMessage messageTrackerMessage = (EhcacheMessageTrackerMessage) message;
+        messageTrackerMessage.getTrackedMessages().entrySet().forEach(e ->
+          messageHandler.loadOnSync(e.getKey(), e.getValue()));
+        break;
       default:
         throw new AssertionError("Unsupported Sync operation " + message.getMessageType());
     }
@@ -301,5 +307,10 @@ public class ClusterTierPassiveEntity implements PassiveServerEntity<EhcacheEnti
       throw new AssertionError(e);
     }
     management.close();
+  }
+
+  @Override
+  public void notifyDestroyed(ClientSourceId sourceId) {
+    messageHandler.untrackClient(sourceId);
   }
 }

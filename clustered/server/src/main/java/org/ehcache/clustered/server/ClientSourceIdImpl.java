@@ -19,11 +19,11 @@ package org.ehcache.clustered.server;
 import org.terracotta.entity.ClientDescriptor;
 import org.terracotta.entity.ClientSourceId;
 
-public class TestClientSourceId implements ClientSourceId {
+public class ClientSourceIdImpl implements ClientSourceId {
 
   private final long id;
 
-  public TestClientSourceId(long id) {
+  public ClientSourceIdImpl(long id) {
     this.id = id;
   }
 
@@ -42,7 +42,7 @@ public class TestClientSourceId implements ClientSourceId {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    TestClientSourceId that = (TestClientSourceId)o;
+    ClientSourceIdImpl that = (ClientSourceIdImpl)o;
 
     return id == that.id;
   }
@@ -50,5 +50,10 @@ public class TestClientSourceId implements ClientSourceId {
   @Override
   public int hashCode() {
     return (int)(id ^ (id >>> 32));
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName() + "(" + id + ")";
   }
 }

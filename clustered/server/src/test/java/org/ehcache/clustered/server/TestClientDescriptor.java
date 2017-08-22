@@ -28,7 +28,7 @@ public final class TestClientDescriptor implements ClientDescriptor {
 
   @Override
   public ClientSourceId getSourceId() {
-    return new TestClientSourceId(clientId);
+    return new ClientSourceIdImpl(clientId);
   }
 
   @Override
