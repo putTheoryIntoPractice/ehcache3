@@ -59,13 +59,7 @@ import static org.mockito.Mockito.mock;
 public class ClusterTierManagerPassiveEntityTest {
 
   private static final LifeCycleMessageFactory MESSAGE_FACTORY = new LifeCycleMessageFactory();
-  private static final UUID CLIENT_ID = UUID.randomUUID();
   private static final KeySegmentMapper DEFAULT_MAPPER = new KeySegmentMapper(16);
-
-  @Before
-  public void setClientId() {
-    MESSAGE_FACTORY.setClientId(CLIENT_ID);
-  }
 
   @Test(expected = ConfigurationException.class)
   public void testConfigNull() throws Exception {

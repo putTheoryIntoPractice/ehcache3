@@ -27,8 +27,6 @@ public interface InternalClusterTierClientEntity extends ClusterTierClientEntity
 
   void setTimeouts(Timeouts timeouts);
 
-  void setClientId(UUID clientId);
-
   void setStoreIdentifier(String storeIdentifier);
 
 }

@@ -62,6 +62,7 @@ public class EhcacheSyncMessageCodecTest {
 
   @Test
   public void testMessageTrackerSyncEncodeDecode_emptyMessage() throws Exception {
+    @SuppressWarnings("unchecked")
     OOOMessageHandler<EhcacheEntityMessage, EhcacheEntityResponse> handler = mock(OOOMessageHandler.class);
     when(handler.getTrackedClients()).thenReturn(Collections.emptySet());
 
@@ -73,6 +74,7 @@ public class EhcacheSyncMessageCodecTest {
 
   @Test
   public void testMessageTrackerSyncEncodeDecode_clientWithoutMessage() throws Exception {
+    @SuppressWarnings("unchecked")
     OOOMessageHandler<EhcacheEntityMessage, EhcacheEntityResponse> handler = mock(OOOMessageHandler.class);
     when(handler.getTrackedClients()).thenReturn(Collections.singleton(new ClientSourceIdImpl(1)));
 
@@ -99,6 +101,7 @@ public class EhcacheSyncMessageCodecTest {
     when(responseCodec.decode(argThat(a -> a != null && a.length == 4))).thenReturn(r4);
     when(responseCodec.decode(argThat(a -> a != null && a.length == 5))).thenReturn(r5);
 
+    @SuppressWarnings("unchecked")
     OOOMessageHandler<EhcacheEntityMessage, EhcacheEntityResponse> handler = mock(OOOMessageHandler.class);
     when(handler.getTrackedClients()).thenReturn(Sets.newLinkedHashSet(id1, id2));
 

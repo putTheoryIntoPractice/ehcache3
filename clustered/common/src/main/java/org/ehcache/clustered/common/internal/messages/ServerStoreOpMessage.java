@@ -23,27 +23,6 @@ import java.util.UUID;
 
 public abstract class ServerStoreOpMessage extends EhcacheOperationMessage {
 
-  protected UUID clientId;
-  protected long id = NOT_REPLICATED;
-
-  @Override
-  public UUID getClientId() {
-    if (clientId == null) {
-      throw new AssertionError("Client Id is not supported for message type " + this.getMessageType() );
-    }
-    return this.clientId;
-  }
-
-  @Override
-  public long getId() {
-    return this.id;
-  }
-
-  @Override
-  public void setId(long id) {
-    this.id = id;
-  }
-
   private ServerStoreOpMessage() {
   }
 
@@ -82,10 +61,9 @@ public abstract class ServerStoreOpMessage extends EhcacheOperationMessage {
 
     private final ByteBuffer payload;
 
-    GetAndAppendMessage(long key, ByteBuffer payload, UUID clientId) {
+    GetAndAppendMessage(long key, ByteBuffer payload) {
       super(key);
       this.payload = payload;
-      this.clientId = clientId;
     }
 
     @Override
@@ -103,10 +81,9 @@ public abstract class ServerStoreOpMessage extends EhcacheOperationMessage {
 
     private final ByteBuffer payload;
 
-    AppendMessage(long key, ByteBuffer payload, UUID clientId) {
+    AppendMessage(long key, ByteBuffer payload) {
       super(key);
       this.payload = payload;
-      this.clientId = clientId;
     }
 
     @Override
@@ -125,11 +102,10 @@ public abstract class ServerStoreOpMessage extends EhcacheOperationMessage {
     private final Chain expect;
     private final Chain update;
 
-    ReplaceAtHeadMessage(long key, Chain expect, Chain update, UUID clientId) {
+    ReplaceAtHeadMessage(long key, Chain expect, Chain update) {
       super(key);
       this.expect = expect;
       this.update = update;
-      this.clientId = clientId;
     }
 
     @Override
@@ -186,9 +162,7 @@ public abstract class ServerStoreOpMessage extends EhcacheOperationMessage {
 
   public static class ClearMessage extends ServerStoreOpMessage {
 
-    ClearMessage(UUID clientId) {
-      super();
-      this.clientId = clientId;
+    ClearMessage() {
     }
 
     @Override

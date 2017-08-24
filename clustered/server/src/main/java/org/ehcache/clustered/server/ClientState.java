@@ -15,6 +15,8 @@
  */
 package org.ehcache.clustered.server;
 
+import org.terracotta.entity.ClientSourceId;
+
 import java.util.UUID;
 
 /**
@@ -25,17 +27,17 @@ public class ClientState {
    * Indicates if the client has either configured or validated with clustered store manager.
    */
   private boolean attached = false;
-  private UUID clientId;
+  private ClientSourceId clientId;
 
   public boolean isAttached() {
     return attached;
   }
 
-  public UUID getClientIdentifier() {
+  public ClientSourceId getClientIdentifier() {
     return clientId;
   }
 
-  void attach(UUID clientId) {
+  void attach(ClientSourceId clientId) {
     this.attached = true;
     this.clientId = clientId;
   }

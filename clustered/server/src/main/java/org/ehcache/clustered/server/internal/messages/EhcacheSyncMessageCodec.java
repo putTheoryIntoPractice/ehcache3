@@ -43,7 +43,6 @@ import static java.nio.ByteBuffer.wrap;
 import static org.ehcache.clustered.common.internal.messages.ChainCodec.CHAIN_ENCODER_FUNCTION;
 import static org.ehcache.clustered.common.internal.messages.ChainCodec.CHAIN_STRUCT;
 import static org.ehcache.clustered.common.internal.messages.MessageCodecUtils.KEY_FIELD;
-import static org.ehcache.clustered.common.internal.messages.MessageCodecUtils.MSG_ID_FIELD;
 import static org.ehcache.clustered.common.internal.messages.MessageCodecUtils.SERVER_STORE_NAME_FIELD;
 import static org.ehcache.clustered.common.internal.store.Util.marshall;
 import static org.ehcache.clustered.common.internal.store.Util.unmarshall;
@@ -91,7 +90,7 @@ public class EhcacheSyncMessageCodec implements SyncMessageCodec<EhcacheEntityMe
     .build();
 
   private static final Struct MESSAGE_TRACKER_RESPONSE_STRUCT = newStructBuilder()
-    .int64(MSG_ID_FIELD, 10)
+    .int64(KEY_FIELD, 10)
     .byteBuffer(MESSAGE_TRACKER_RESPONSE_FIELD, 20)
     .build();
 
@@ -143,7 +142,7 @@ public class EhcacheSyncMessageCodec implements SyncMessageCodec<EhcacheEntityMe
             clientEncoder.int64(KEY_FIELD, entry.getKey().toLong());
             clientEncoder.structs(MESSAGE_TRACKER_RESPONSES_STRUCT, responses.entrySet(),
               (responseEncoder, response) -> {
-                responseEncoder.int64(MSG_ID_FIELD, response.getKey());
+                responseEncoder.int64(KEY_FIELD, response.getKey());
                 responseEncoder.byteBuffer(MESSAGE_TRACKER_RESPONSE_FIELD, encodeResponse(response.getValue()));
               });
           }
@@ -222,7 +221,7 @@ public class EhcacheSyncMessageCodec implements SyncMessageCodec<EhcacheEntityMe
         if(responses != null) {
           while (responsesDecoder.hasNext()) {
             StructDecoder<StructArrayDecoder<StructDecoder<StructArrayDecoder<StructDecoder<Void>>>>> responseDecoder = responsesDecoder.next();
-            Long transactionId = responseDecoder.int64(MSG_ID_FIELD);
+            Long transactionId = responseDecoder.int64(KEY_FIELD);
             ByteBuffer bb = responseDecoder.byteBuffer(MESSAGE_TRACKER_RESPONSE_FIELD);
             byte[] encodedResponse = new byte[bb.remaining()];
             bb.get(encodedResponse);

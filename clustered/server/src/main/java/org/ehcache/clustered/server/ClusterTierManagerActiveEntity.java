@@ -18,7 +18,6 @@ package org.ehcache.clustered.server;
 import org.ehcache.clustered.common.ServerSideConfiguration;
 import org.ehcache.clustered.common.internal.ClusterTierManagerConfiguration;
 import org.ehcache.clustered.common.internal.exceptions.ClusterException;
-import org.ehcache.clustered.common.internal.exceptions.InvalidClientIdException;
 import org.ehcache.clustered.common.internal.exceptions.InvalidOperationException;
 import org.ehcache.clustered.common.internal.exceptions.LifecycleException;
 import org.ehcache.clustered.common.internal.messages.EhcacheEntityMessage;
@@ -36,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.terracotta.entity.ActiveInvokeContext;
 import org.terracotta.entity.ActiveServerEntity;
 import org.terracotta.entity.ClientDescriptor;
+import org.terracotta.entity.ClientSourceId;
 import org.terracotta.entity.ConfigurationException;
 import org.terracotta.entity.PassiveSynchronizationChannel;
 import org.terracotta.entity.StateDumpCollector;
@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -181,7 +180,7 @@ public class ClusterTierManagerActiveEntity implements ActiveServerEntity<Ehcach
       throw new AssertionError("Client "+ clientDescriptor +" trying to reconnect is not connected to entity");
     }
     ClusterTierManagerReconnectMessage reconnectMessage = reconnectMessageCodec.decodeReconnectMessage(extendedReconnectData);
-    clientState.attach(reconnectMessage.getClientId());
+    clientState.attach(clientDescriptor.getSourceId());
     LOGGER.info("Client '{}' successfully reconnected to newly promoted ACTIVE after failover.", clientDescriptor);
 
     management.clientReconnected(clientDescriptor, clientState);
@@ -260,20 +259,21 @@ public class ClusterTierManagerActiveEntity implements ActiveServerEntity<Ehcach
   private void validate(ClientDescriptor clientDescriptor, ValidateStoreManager message) throws ClusterException {
     validateClientConnected(clientDescriptor);
     ClientState clientState = clientStateMap.get(clientDescriptor);
-    UUID clientId = clientState.getClientIdentifier();
+    ClientSourceId clientId = clientState.getClientIdentifier();
     if (clientId != null) {
       throw new LifecycleException("Client : " + clientDescriptor + " is already being tracked with Client Id : " + clientId);
     }
-    if (getTrackedClients().contains(message.getClientId())) {
-      throw new InvalidClientIdException("Client ID : " + message.getClientId() + " is already being tracked.");
+    ClientSourceId arrivingClientId = clientDescriptor.getSourceId();
+    if (getTrackedClients().contains(arrivingClientId)) {
+      throw new LifecycleException("Client ID : " + arrivingClientId + " is already being tracked.");
     }
 
     ehcacheStateService.validate(message.getConfiguration());
-    clientState.attach(message.getClientId());
+    clientState.attach(arrivingClientId);
     management.clientValidated(clientDescriptor, clientState);
   }
 
-  private Set<UUID> getTrackedClients() {
+  private Set<ClientSourceId> getTrackedClients() {
     return clientStateMap.entrySet().stream()
       .filter(entry -> entry.getValue().isAttached())
       .map(entry -> entry.getValue().getClientIdentifier())

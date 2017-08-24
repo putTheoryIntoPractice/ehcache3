@@ -25,12 +25,4 @@ import java.util.UUID;
  */
 public abstract class EhcacheEntityMessage implements EntityMessage {
 
-  static final long NOT_REPLICATED = -1;
-
-  public abstract void setId(long id);
-
-  public abstract long getId();
-
-  public abstract UUID getClientId();
-
 }

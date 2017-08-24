@@ -301,17 +301,17 @@ public class ClusterTierActiveEntity implements ActiveServerEntity<EhcacheEntity
     ServerSideServerStore store = stateService.getStore(storeIdentifier);
     if (store != null) {
       storeCompatibility.verify(store.getStoreConfiguration(), clientConfiguration);
-      attachStore(clientDescriptor, validateServerStore.getClientId());
+      attachStore(clientDescriptor);
       management.clientValidated(clientDescriptor, connectedClients.get(clientDescriptor));
     } else {
       throw new InvalidStoreException("cluster tier '" + storeIdentifier + "' does not exist");
     }
   }
 
-  private void attachStore(ClientDescriptor clientDescriptor, UUID clientId) {
-    ClusterTierClientState clientState = new ClusterTierClientState(storeIdentifier, true, clientId);
+  private void attachStore(ClientDescriptor clientDescriptor) {
+    ClusterTierClientState clientState = new ClusterTierClientState(storeIdentifier, true, clientDescriptor.getSourceId());
     connectedClients.replace(clientDescriptor, clientState);
-    LOGGER.info("Client: {} with client ID: {} attached to cluster tier '{}'", clientDescriptor, clientId, storeIdentifier);
+    LOGGER.info("Client: {} attached to cluster tier '{}'", clientDescriptor, storeIdentifier);
   }
 
   private EhcacheEntityResponse invokeServerStoreOperation(InvokeContext context, ServerStoreOpMessage message) throws ClusterException {
@@ -379,7 +379,7 @@ public class ClusterTierActiveEntity implements ActiveServerEntity<EhcacheEntity
       }
       case GET_AND_APPEND: {
         ServerStoreOpMessage.GetAndAppendMessage getAndAppendMessage = (ServerStoreOpMessage.GetAndAppendMessage)message;
-        LOGGER.trace("Message {} : GET_AND_APPEND on key {} from client {}", message, getAndAppendMessage.getKey(), getAndAppendMessage.getClientId());
+        LOGGER.trace("Message {} : GET_AND_APPEND on key {} from client {}", message, getAndAppendMessage.getKey(), ((ActiveInvokeContext) context).getClientDescriptor().getSourceId());
 
         InvalidationTracker invalidationTracker = stateService.getInvalidationTracker(storeIdentifier);
         if (invalidationTracker != null) {
@@ -549,7 +549,7 @@ public class ClusterTierActiveEntity implements ActiveServerEntity<EhcacheEntity
     try {
       long clientId = context.getClientSource().toLong();
       entityMessenger.messageSelfAndDeferRetirement(message, new PassiveReplicationMessage.ChainReplicationMessage(message.getKey(), result,
-        context.getCurrentTransactionId(), context.getOldestTransactionId(), new UUID(clientId, clientId)));
+        context.getCurrentTransactionId(), context.getOldestTransactionId(), clientId));
     } catch (MessageCodecException e) {
       throw new AssertionError("Codec error", e);
     }
@@ -581,7 +581,7 @@ public class ClusterTierActiveEntity implements ActiveServerEntity<EhcacheEntity
     ServerSideServerStore serverStore = stateService.getStore(storeIdentifier);
     addInflightInvalidationsForStrongCache(clientDescriptor, reconnectMessage, serverStore);
 
-    attachStore(clientDescriptor, reconnectMessage.getClientId());
+    attachStore(clientDescriptor);
     LOGGER.info("Client '{}' successfully reconnected to newly promoted ACTIVE after failover.", clientDescriptor);
 
     management.clientReconnected(clientDescriptor, connectedClients.get(clientDescriptor));
@@ -590,14 +590,14 @@ public class ClusterTierActiveEntity implements ActiveServerEntity<EhcacheEntity
   private void addInflightInvalidationsForStrongCache(ClientDescriptor clientDescriptor, ClusterTierReconnectMessage reconnectMessage, ServerSideServerStore serverStore) {
     if (serverStore.getStoreConfiguration().getConsistency().equals(Consistency.STRONG)) {
       Set<Long> invalidationsInProgress = reconnectMessage.getInvalidationsInProgress();
-      LOGGER.debug("Number of Inflight Invalidations from client ID {} for cache {} is {}.", reconnectMessage.getClientId(), storeIdentifier, invalidationsInProgress
-          .size());
+      LOGGER.debug("Number of Inflight Invalidations from client ID {} for cache {} is {}.", clientDescriptor.getSourceId(), storeIdentifier, invalidationsInProgress.size());
       inflightInvalidations.add(new InvalidationTuple(clientDescriptor, invalidationsInProgress, reconnectMessage.isClearInProgress()));
     }
   }
 
   @Override
   public void synchronizeKeyToPassive(PassiveSynchronizationChannel<EhcacheEntityMessage> syncChannel, int concurrencyKey) {
+
     LOGGER.info("Sync started for concurrency key {}.", concurrencyKey);
     if (concurrencyKey == DEFAULT_KEY) {
       stateService.getStateRepositoryManager().syncMessageFor(storeIdentifier).forEach(syncChannel::synchronizeToPassive);

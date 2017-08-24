@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.ehcache.clustered.server.management;
 
-import java.util.UUID;
+import org.terracotta.entity.ClientSourceId;
 
 /**
  * ClusterTierClientState
@@ -25,14 +24,14 @@ public class ClusterTierClientState {
 
   private final boolean attached;
   private final String storeIdentifier;
-  private final UUID clientId;
+  private final ClientSourceId clientId;
 
 
   public ClusterTierClientState(String storeIdentifier, boolean attached) {
     this(storeIdentifier, attached, null);
   }
 
-  public ClusterTierClientState(String storeIdentifier, boolean attached, UUID clientId) {
+  public ClusterTierClientState(String storeIdentifier, boolean attached, ClientSourceId clientId) {
     this.attached = attached;
     this.storeIdentifier = storeIdentifier;
     this.clientId = clientId;
@@ -46,7 +45,7 @@ public class ClusterTierClientState {
     return storeIdentifier;
   }
 
-  public UUID getClientIdentifier() {
+  public ClientSourceId getClientIdentifier() {
     return clientId;
   }
 }

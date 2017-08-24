@@ -100,9 +100,9 @@ public class ClusteredStoreTest {
     ClusteredResourcePool resourcePool = ClusteredResourcePoolBuilder.clusteredDedicated(4, MemoryUnit.MB);
     ServerStoreConfiguration serverStoreConfiguration = new ServerStoreConfiguration(resourcePool.getPoolAllocation(),
       Long.class.getName(), String.class.getName(), LongSerializer.class.getName(), StringSerializer.class.getName(), null);
-    ClusterTierClientEntity clientEntity = entityFactory.fetchOrCreateClusteredStoreEntity(UUID.randomUUID(), "TestCacheManager", CACHE_IDENTIFIER, serverStoreConfiguration, true);
+    ClusterTierClientEntity clientEntity = entityFactory.fetchOrCreateClusteredStoreEntity("TestCacheManager", CACHE_IDENTIFIER, serverStoreConfiguration, true);
     clientEntity.validate(serverStoreConfiguration);
-    ServerStoreMessageFactory factory = new ServerStoreMessageFactory(clientEntity.getClientId());
+    ServerStoreMessageFactory factory = new ServerStoreMessageFactory();
     ServerStoreProxy serverStoreProxy = new CommonServerStoreProxy(CACHE_IDENTIFIER, factory, clientEntity);
 
     TestTimeSource testTimeSource = new TestTimeSource();

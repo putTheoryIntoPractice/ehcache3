@@ -28,20 +28,15 @@ import java.util.UUID;
  */
 public abstract class PassiveReplicationMessage extends EhcacheOperationMessage {
 
-  @Override
-  public void setId(long id) {
-    throw new UnsupportedOperationException("This method is not supported on replication message");
-  }
-
   public static class ChainReplicationMessage extends PassiveReplicationMessage implements ConcurrentEntityMessage {
 
-    private final UUID clientId;
+    private final long clientId;
     private final long key;
     private final Chain chain;
     private final long currentTransactionId;
     private final long oldestTransactionId;
 
-    public ChainReplicationMessage(long key, Chain chain, long currentTransactionId, long oldestTransactionId, UUID clientId) {
+    public ChainReplicationMessage(long key, Chain chain, long currentTransactionId, long oldestTransactionId, long clientId) {
       this.clientId = clientId;
       this.currentTransactionId = currentTransactionId;
       this.oldestTransactionId = oldestTransactionId;
@@ -49,7 +44,7 @@ public abstract class PassiveReplicationMessage extends EhcacheOperationMessage 
       this.chain = chain;
     }
 
-    public UUID getClientId() {
+    public long getClientId() {
       return clientId;
     }
 
@@ -61,7 +56,7 @@ public abstract class PassiveReplicationMessage extends EhcacheOperationMessage 
       return chain;
     }
 
-    public long getId() {
+    public long getCurrentTransactionId() {
       return currentTransactionId;
     }
 
@@ -81,19 +76,6 @@ public abstract class PassiveReplicationMessage extends EhcacheOperationMessage 
   }
 
   public static class ClearInvalidationCompleteMessage extends PassiveReplicationMessage {
-
-    public ClearInvalidationCompleteMessage() {
-    }
-
-    @Override
-    public long getId() {
-      throw new UnsupportedOperationException("Not supported for ClearInvalidationCompleteMessage");
-    }
-
-    @Override
-    public UUID getClientId() {
-      throw new UnsupportedOperationException("Not supported for ClearInvalidationCompleteMessage");
-    }
 
     @Override
     public EhcacheMessageType getMessageType() {
@@ -121,16 +103,6 @@ public abstract class PassiveReplicationMessage extends EhcacheOperationMessage 
 
     public long getKey() {
       return key;
-    }
-
-    @Override
-    public long getId() {
-      throw new UnsupportedOperationException("Not supported for InvalidationCompleteMessage");
-    }
-
-    @Override
-    public UUID getClientId() {
-      throw new UnsupportedOperationException("Not supported for InvalidationCompleteMessage");
     }
   }
 }

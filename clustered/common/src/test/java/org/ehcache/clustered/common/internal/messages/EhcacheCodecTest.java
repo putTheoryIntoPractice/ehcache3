@@ -54,25 +54,24 @@ public class EhcacheCodecTest {
   }
 
   @Test
-  public void encodeMessage() throws Exception {
-    LifecycleMessage.ValidateServerStore lifecycleMessage = new LifecycleMessage.ValidateServerStore("foo", null, CLIENT_ID);
+  public void encodeLifecycleMessage() throws Exception {
+    LifecycleMessage.ValidateServerStore lifecycleMessage = new LifecycleMessage.ValidateServerStore("foo", null);
     codec.encodeMessage(lifecycleMessage);
     verify(lifeCycleMessageCodec, only()).encode(any(LifecycleMessage.class));
-    verify(serverStoreOpCodec, never()).encode(any(ServerStoreOpMessage.class));
-    verify(stateRepositoryOpCodec, never()).encode(any(StateRepositoryOpMessage.class));
+  }
 
-    ServerStoreOpMessage.ClearMessage serverStoreOpMessage = new ServerStoreOpMessage.ClearMessage(CLIENT_ID);
+  @Test
+  public void encodeServerStoreOpMessage() throws Exception {
+    ServerStoreOpMessage.ClearMessage serverStoreOpMessage = new ServerStoreOpMessage.ClearMessage();
     codec.encodeMessage(serverStoreOpMessage);
-    verify(lifeCycleMessageCodec, only()).encode(any(LifecycleMessage.class));
     verify(serverStoreOpCodec, only()).encode(any(ServerStoreOpMessage.class));
-    verify(stateRepositoryOpCodec, never()).encode(any(StateRepositoryOpMessage.class));
+  }
 
-    StateRepositoryOpMessage.EntrySetMessage stateRepositoryOpMessage = new StateRepositoryOpMessage.EntrySetMessage("foo", "bar", CLIENT_ID);
+  @Test
+  public void encodeStateREpositoryOpMessage() throws Exception {
+    StateRepositoryOpMessage.EntrySetMessage stateRepositoryOpMessage = new StateRepositoryOpMessage.EntrySetMessage("foo", "bar");
     codec.encodeMessage(stateRepositoryOpMessage);
-    verify(lifeCycleMessageCodec, only()).encode(any(LifecycleMessage.class));
-    verify(serverStoreOpCodec, only()).encode(any(ServerStoreOpMessage.class));
     verify(stateRepositoryOpCodec, only()).encode(any(StateRepositoryOpMessage.class));
-
   }
 
   @Test

@@ -28,7 +28,7 @@ import static org.ehcache.clustered.common.internal.store.Util.getChain;
 
 public class ServerStoreMessageFactoryTest {
 
-  private static final ServerStoreMessageFactory MESSAGE_FACTORY = new ServerStoreMessageFactory(UUID.randomUUID());
+  private static final ServerStoreMessageFactory MESSAGE_FACTORY = new ServerStoreMessageFactory();
 
   @Test
   public void testAppendMessage() {

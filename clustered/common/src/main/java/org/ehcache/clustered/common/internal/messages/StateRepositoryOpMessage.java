@@ -24,31 +24,9 @@ public abstract class StateRepositoryOpMessage extends EhcacheOperationMessage i
   private final String cacheId;
   private final String mapId;
 
-  private UUID clientId;
-  protected long id = NOT_REPLICATED;
-
-  private StateRepositoryOpMessage(String cacheId, String mapId, UUID clientId) {
+  private StateRepositoryOpMessage(String cacheId, String mapId) {
     this.cacheId = cacheId;
     this.mapId = mapId;
-    this.clientId = clientId;
-  }
-
-  @Override
-  public UUID getClientId() {
-    if (clientId == null) {
-      throw new AssertionError("Client Id cannot be null for StateRepository messages");
-    }
-    return this.clientId;
-  }
-
-  @Override
-  public long getId() {
-    return this.id;
-  }
-
-  @Override
-  public void setId(long id) {
-    this.id = id;
   }
 
   public String getCacheId() {
@@ -63,8 +41,8 @@ public abstract class StateRepositoryOpMessage extends EhcacheOperationMessage i
 
     private final Object key;
 
-    private KeyBasedMessage(final String cacheId, final String mapId, final Object key, final UUID clientId) {
-      super(cacheId, mapId, clientId);
+    private KeyBasedMessage(final String cacheId, final String mapId, final Object key) {
+      super(cacheId, mapId);
       this.key = key;
     }
 
@@ -76,8 +54,8 @@ public abstract class StateRepositoryOpMessage extends EhcacheOperationMessage i
 
   public static class GetMessage extends KeyBasedMessage {
 
-    public GetMessage(final String cacheId, final String mapId, final Object key, final UUID clientId) {
-      super(cacheId, mapId, key, clientId);
+    public GetMessage(final String cacheId, final String mapId, final Object key) {
+      super(cacheId, mapId, key);
     }
 
     @Override
@@ -90,8 +68,8 @@ public abstract class StateRepositoryOpMessage extends EhcacheOperationMessage i
 
     private final Object value;
 
-    public PutIfAbsentMessage(final String cacheId, final String mapId, final Object key, final Object value, final UUID clientId) {
-      super(cacheId, mapId, key, clientId);
+    public PutIfAbsentMessage(final String cacheId, final String mapId, final Object key, final Object value) {
+      super(cacheId, mapId, key);
       this.value = value;
     }
 
@@ -107,8 +85,8 @@ public abstract class StateRepositoryOpMessage extends EhcacheOperationMessage i
 
   public static class EntrySetMessage extends StateRepositoryOpMessage {
 
-    public EntrySetMessage(final String cacheId, final String mapId, final UUID clientId) {
-      super(cacheId, mapId, clientId);
+    public EntrySetMessage(final String cacheId, final String mapId) {
+      super(cacheId, mapId);
     }
 
     @Override

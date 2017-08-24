@@ -37,21 +37,6 @@ public class MessageTrackerPolicyTest {
     public EhcacheMessageType getMessageType() {
       return type;
     }
-
-    @Override
-    public void setId(long id) {
-
-    }
-
-    @Override
-    public long getId() {
-      return 0;
-    }
-
-    @Override
-    public UUID getClientId() {
-      return null;
-    }
   }
 
   private MessageTrackerPolicy policy = new MessageTrackerPolicy(EhcacheMessageType.REPLACE::equals);

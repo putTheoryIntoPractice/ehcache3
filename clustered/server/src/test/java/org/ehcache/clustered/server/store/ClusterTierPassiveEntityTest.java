@@ -65,7 +65,6 @@ import static org.mockito.Mockito.mock;
 public class ClusterTierPassiveEntityTest {
 
   private static final LifeCycleMessageFactory MESSAGE_FACTORY = new LifeCycleMessageFactory();
-  private static final UUID CLIENT_ID = UUID.randomUUID();
   private static final KeySegmentMapper DEFAULT_MAPPER = new KeySegmentMapper(16);
 
   private String defaultStoreName = "store";
@@ -78,7 +77,6 @@ public class ClusterTierPassiveEntityTest {
 
   @Before
   public void setUp() {
-    MESSAGE_FACTORY.setClientId(CLIENT_ID);
     defaultRegistry = new OffHeapIdentifierRegistry();
     defaultRegistry.addResource(defaultResource, 10, MemoryUnit.MEGABYTES);
     defaultStoreConfiguration = new ServerStoreConfigBuilder().dedicated(defaultResource, 1024, MemoryUnit.KILOBYTES).build();
@@ -149,7 +147,7 @@ public class ClusterTierPassiveEntityTest {
     Chain chain = Util.getChain(true, createPayload(1L));
     TestInvokeContext context = new TestInvokeContext();
 
-    UUID clientId = new UUID(3, 3);
+    long clientId = 3;
 
     PassiveReplicationMessage message1 = new PassiveReplicationMessage.ChainReplicationMessage(1, chain, 2L, 1L, clientId);
     passiveEntity.invokePassive(context, message1);

@@ -72,9 +72,9 @@ public class CommonServerStoreProxyTest {
       .getName(),
       Long.class.getName(), LongSerializer.class.getName(), LongSerializer.class
       .getName(), null);
-    ClusterTierClientEntity clientEntity = entityFactory.fetchOrCreateClusteredStoreEntity(UUID.randomUUID(), "TestCacheManager", CACHE_IDENTIFIER, serverStoreConfiguration, true);
+    ClusterTierClientEntity clientEntity = entityFactory.fetchOrCreateClusteredStoreEntity( "TestCacheManager", CACHE_IDENTIFIER, serverStoreConfiguration, true);
     clientEntity.validate(serverStoreConfiguration);
-    serverStoreProxy = new CommonServerStoreProxy(CACHE_IDENTIFIER, new ServerStoreMessageFactory(clientEntity.getClientId()), clientEntity);
+    serverStoreProxy = new CommonServerStoreProxy(CACHE_IDENTIFIER, new ServerStoreMessageFactory(), clientEntity);
   }
 
   @AfterClass

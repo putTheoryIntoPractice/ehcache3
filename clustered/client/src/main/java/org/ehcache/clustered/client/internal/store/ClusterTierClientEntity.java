@@ -34,8 +34,6 @@ import java.util.concurrent.TimeoutException;
  */
 public interface ClusterTierClientEntity extends Entity {
 
-  UUID getClientId();
-
   boolean isConnected();
 
   void validate(ServerStoreConfiguration clientStoreConfiguration) throws ClusterTierException, TimeoutException;

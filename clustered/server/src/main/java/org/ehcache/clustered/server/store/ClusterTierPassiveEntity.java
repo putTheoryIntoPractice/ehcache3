@@ -122,20 +122,21 @@ public class ClusterTierPassiveEntity implements PassiveServerEntity<EhcacheEnti
     // For ChainReplicationMessage, we need to recreate the real client context from the one stored in the message. Because the current
     // context comes from the active message. That's not what we want.
     if (message instanceof ChainReplicationMessage) {
+      ChainReplicationMessage chainReplicationMessage = (ChainReplicationMessage) message;
       realContext = new InvokeContext() {
         @Override
         public ClientSourceId getClientSource() {
-          return context.makeClientSourceId(message.getClientId().getLeastSignificantBits());
+          return context.makeClientSourceId(chainReplicationMessage.getClientId());
         }
 
         @Override
         public long getCurrentTransactionId() {
-          return message.getId();
+          return chainReplicationMessage.getCurrentTransactionId();
         }
 
         @Override
         public long getOldestTransactionId() {
-          return ((ChainReplicationMessage)message).getOldestTransactionId();
+          return chainReplicationMessage.getOldestTransactionId();
         }
 
         @Override
@@ -220,7 +221,9 @@ public class ClusterTierPassiveEntity implements PassiveServerEntity<EhcacheEnti
 
     switch (message.getMessageType()) {
       case CHAIN_REPLICATION_OP:
-        LOGGER.debug("Chain Replication message for msgId {} & client Id {}", message.getId(), message.getClientId());
+        ChainReplicationMessage chainReplicationMessage = (ChainReplicationMessage) message;
+        LOGGER.debug("Chain Replication message for msgId {} & client Id {}",
+          chainReplicationMessage.getCurrentTransactionId(), chainReplicationMessage.getClientId());
         ChainReplicationMessage retirementMessage = (ChainReplicationMessage) message;
         ServerSideServerStore cacheStore = stateService.getStore(storeIdentifier);
         if (cacheStore == null) {

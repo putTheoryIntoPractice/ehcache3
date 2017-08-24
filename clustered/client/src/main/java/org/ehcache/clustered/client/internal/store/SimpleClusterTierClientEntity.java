@@ -69,7 +69,6 @@ public class SimpleClusterTierClientEntity implements InternalClusterTierClientE
   private final Map<Class<? extends EhcacheEntityResponse>, List<ResponseListener<? extends EhcacheEntityResponse>>> responseListeners =
     new ConcurrentHashMap<Class<? extends EhcacheEntityResponse>, List<ResponseListener<? extends EhcacheEntityResponse>>>();
 
-  private UUID clientId;
   private ReconnectListener reconnectListener = new ReconnectListener() {
     @Override
     public void onHandleReconnect(ClusterTierReconnectMessage reconnectMessage) {
@@ -86,7 +85,6 @@ public class SimpleClusterTierClientEntity implements InternalClusterTierClientE
   private String storeIdentifier;
   private volatile boolean connected = true;
 
-
   public SimpleClusterTierClientEntity(EntityClientEndpoint<EhcacheEntityMessage, EhcacheEntityResponse> endpoint) {
     this.endpoint = endpoint;
     this.messageFactory = new LifeCycleMessageFactory();
@@ -100,7 +98,7 @@ public class SimpleClusterTierClientEntity implements InternalClusterTierClientE
       @Override
       public byte[] createExtendedReconnectData() {
         synchronized (lock) {
-          ClusterTierReconnectMessage reconnectMessage = new ClusterTierReconnectMessage(clientId);
+          ClusterTierReconnectMessage reconnectMessage = new ClusterTierReconnectMessage();
           reconnectListener.onHandleReconnect(reconnectMessage);
           return reconnectMessageCodec.encode(reconnectMessage);
         }
@@ -141,20 +139,6 @@ public class SimpleClusterTierClientEntity implements InternalClusterTierClientE
     reconnectListener = null;
     disconnectionListener = null;
     endpoint.close();
-  }
-
-  @Override
-  public void setClientId(UUID clientId) {
-    this.clientId = clientId;
-    messageFactory.setClientId(clientId);
-  }
-
-  @Override
-  public UUID getClientId() {
-    if (clientId == null) {
-      throw new IllegalStateException("Client Id cannot be null");
-    }
-    return this.clientId;
   }
 
   @Override
@@ -250,10 +234,6 @@ public class SimpleClusterTierClientEntity implements InternalClusterTierClientE
 
   private InvokeFuture<EhcacheEntityResponse> internalInvokeAsync(EhcacheEntityMessage message, boolean track)
         throws MessageCodecException {
-    getClientId();
-    if (track) {
-      message.setId(sequenceGenerator.getAndIncrement());
-    }
     return endpoint.beginInvoke().message(message).invoke();
   }
 
