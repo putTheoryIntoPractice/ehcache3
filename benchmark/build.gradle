@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
-include "api", "spi-tester", "core", "core-spi-test", "impl", "management", "transactions", "107", "xml",
-        "clustered", "clustered:common", "clustered:client", "clustered:server", "clustered:integration-test", "clustered:clustered-dist", "clustered:ops-tool",
-        "integration-test", "dist", "osgi-test", "demos", "demos:00-NoCache", "demos:01-CacheAside", "docs", "benchmark"
+plugins {
+  id "me.champeau.gradle.jmh" version "0.4.4"
+}
+
+dependencies {
+  jmh project(':impl'), project(':107'), project(':transactions'), "org.slf4j:slf4j-api:$parent.slf4jVersion", "javax.cache:cache-api:$parent.jcacheVersion"
+}

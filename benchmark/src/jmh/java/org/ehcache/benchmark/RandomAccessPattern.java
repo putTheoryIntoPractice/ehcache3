@@ -13,7 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.ehcache.benchmark;
 
-include "api", "spi-tester", "core", "core-spi-test", "impl", "management", "transactions", "107", "xml",
-        "clustered", "clustered:common", "clustered:client", "clustered:server", "clustered:integration-test", "clustered:clustered-dist", "clustered:ops-tool",
-        "integration-test", "dist", "osgi-test", "demos", "demos:00-NoCache", "demos:01-CacheAside", "docs", "benchmark"
+public class RandomAccessPattern implements AccessPattern {
+
+  protected final long upperBound;
+
+  public RandomAccessPattern(long upperBound) {
+    this.upperBound = upperBound;
+  }
+
+  @Override
+  public Long next() {
+    return RandomUtil.nextLong(upperBound);
+  }
+}
