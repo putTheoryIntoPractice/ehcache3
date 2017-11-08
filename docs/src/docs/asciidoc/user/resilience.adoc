@@ -1,0 +1,189 @@
+---
+---
+= Resilience
+
+*Note:* This is not the current state of things. It is the current ongoing effort to improve cluster resilience.
+
+== What can go wrong
+
+* Server fails to get an answer erratically because of network or something
+* Server fails to send messages to the client erratically
+* Server goes down
+* Server failover
+* Loader-writer backend fails
+
+== Strong vs Eventual
+
+Strong means: If the client asks for a value that was updated by some other server, it will always get the
+latest value.
+
+In particular, it means that as soon as an update from the server might be missed, we need to clear
+the caching tier. It also means that if we fail to set a value to the authoritative tier, we can't use
+the cache anymore. On this key at least.
+
+Eventual means the correct value will eventually be there. So if we lose contact with the server, it is possible to keep
+using a possibly stale cache entry. This means that a client with eventual consistency shouldn't need to clear its cache
+at all. However, it means two things:
+
+* We need to be able to update the caching tier in that case
+* We need to get updates from the server when the situation resumes
+
+=== Being too eventual
+
+We can argue that if a client stays disconnected for too long, it means the caching tier content is now too obsolete. There
+are two ways to handle that:
+
+* Expiration should take care of it. So entries should have an expiration set to their expected time validity.
+* We configure "too long" which will clear the cache
+
+== Clustering
+
+When using a distributed cache, your Ehcache client will connect to a remote Terracotta server (or multiple in case
+of stripping) which act as the authoritative tier.
+
+This server data can be replicated to other servers called mirrors. How your client will handle being cut from
+the cluster is defined in `ClusteringServiceConfiguration`.
+
+=== Timeouts
+
+If a client doesn't receive an answer in the configured time, it will timeout. This can happen for different reasons
+including a network cut, a long full GC or a server down.
+
+Three different types of timeouts have been defined.
+
+* Read: Operations reading data from the server
+* Mutative: Operations modifying data on the server
+* Lifecycle: Operations related to the lifecycle like creating and destroying a cache or simply connecting to the server
+
+By default, all are set to 5 seconds.
+
+=== Retries
+
+When a client timeouts, it might retry right away. There are two parameters for that:
+
+* Number of retries (default is 0)
+* Sleep time between retries (default is 0)
+
+Note that for each retry, the timeout will be enforced. So, for example, 3 retries with a timeout of 5 seconds and a sleep
+of 1 second will mean 20 seconds before returning.
+
+*Note to myself:* Should the retry be on the resilience strategy?
+
+=== In case of failure
+
+If we failed to get an answer, the cache [#Resilience Strategy] will kick in and return whatever it was configured to return.
+
+Resilience strategy is not used for lifecycle events. So in this case you will get a `StoreAccessException`.
+
+=== After a failure
+
+We will now consider a server with no mirror.
+
+The first thing that can happen is a server that has problem answering correctly all the time but that is still there.
+In this case, after 10 timeouts (configurable), the client will consider the server down to prevent waiting on requests.
+It will perform heartbeats in background to determine when the situation goes back to normal and reconnect if needed.
+Meanwhile, it will rely on the resilience strategy to answer.
+
+*Note:* M&M will trigger an alarm if a server is acting erratically.
+
+It is important to notice that the client won't fallback to the resilience strategy when the caching tier answers.
+It also means that the caching tier might not receive updates from the server and become out of sync.
+
+This is independent of the consistency configured and configurable. You can pick the following strategies:
+
+* Rely on tier forever, so even if the server is officially lost
+* Rely on tier on hiccups. The server will keep the caching tier until it declares the server lost for good
+* Don't rely on tier.
+
+When the server is lost, the client won't try to call it until the heartbeat resumes. A nice feature would be to have a
+ledger pointer in the heartbeat. To tell the client it is out of sync when an answer comes.
+
+=== Active and mirror setup
+
+It works the same as with a single server. Except that during a failover, the client will behave like if the underlying
+server is having hiccups. Or is down if the failover takes too long.
+
+The new active server will notify the client when ready.
+
+=== Reconnection
+
+When a server goes down and back again. On the same URL. The client will silently reconnect to it. The ledger should allow
+to invalidate entries on the caching tier.
+
+== Loader writer
+
+Cache loader writers have a dedicated resilience strategy. So in case of failure, the loader writer resilience strategy
+will operate and the result will be picked up by the Cache resilience strategy.
+
+When using a loader writer, we tend to consider the following:
+
+* We expect the cache never return null. Because the loader will load any missing data. But to enforce that
+in case of server failure, it means the client should wait until the backend is back.
+* We expect that everything cached is saved. So in general an exception should be thrown if we fail to do so.
+
+The default loader writer resilience strategy is the following.
+
+* V load(K key): Retry infinitely
+* Map<K, V> loadAll(Iterable<? extends K> keys): Retry infinitely
+* void write(K key, V value): Exception
+* void writeAll(Iterable<? extends Map.Entry<? extends K, ? extends V>> entries): Exception
+* void delete(K key): Exception
+* void deleteAll(Iterable<? extends K> keys): Exception
+
+=== Write behind
+
+The resilience strategy is applied to write behind as well. So make sure it manages errors
+that are asynchronous.
+
+== Interruptions
+
+When waiting on a call to a store, an interruption should allow to get out. It will then probably rely on the resilience
+strategy (I'm not sure about that) or throw an exception right away.
+
+== Resilience Strategy
+
+The default resilience strategy (`RobustResilienceStrategy`) will
+
+* Return null on a read
+* Do nothing on a void mutation
+* Throw an exception if the result depends on the result of the mutation
+
+We can build your own strategy or used other provided ones.
+
+=== Alternative resilience strategies
+
+==== NOP
+
+This resilience strategy should provide a behaviour similar to a caching that does not cache anything.
+I think this will be favourite default. At least without loader-writer.
+
+[cols=">s,1*", options="header"]
+|======================================================
+|Method         |Behavior
+|clear          |Do nothing
+|containsKey    |Return false
+|forEach        |empty list
+|get            |Return null
+|getAll         |Return all nulls
+|getAndPut      |Return null, nothing is put
+|getAndRemove   |Return null, nothing is removed
+|getAndReplace  |Return null, nothing is replaced
+|invoke         |Do nothing and return null
+|invokeAll      |Do nothing and return nulls
+|iterator       |Empty iterator
+|loadAll        |Do nothing
+|put            |Do nothing
+|putAll         |Do nothing
+|putIfAbsent    |Do nothing, return null
+|remove(K)      |Do nothing
+|remove(K,V)    |Do nothing
+|removeAll      |Do nothing
+|removeAll(keys)|Do nothing
+|replace(K,V)   |Do nothing
+|replace(K,O,N) |Do nothing
+|spliterator    |Empty spliterator
+|======================================================
+
+==== Fail
+
+Throws exceptions for everything.
