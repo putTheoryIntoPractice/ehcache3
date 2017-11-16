@@ -4,6 +4,31 @@
 
 *Note:* This is not the current state of things. It is the current ongoing effort to improve cluster resilience.
 
+== Resilience configuration executive summary
+
+This is a summary of all the possible configuration. It's useful to you if you already have read the rest of the document
+and want to see the configuration summarized in one place. If you haven't read the rest of the document yet, you won't
+understand a thing.
+
+Read timeout::
+  How long to wait on a read to the cluster. Applies to `get`, `getAll` and `containsKey`
+Mutative timeout::
+  How long to wait on a write operation on the cluster. Applies to everything else
+Heartbeat time::
+  Time between two heartbeats
+Heartbeat fails accepted::
+  How many heartbeats can fail before considering the server AWOL
+Resilience strategy::
+  Interface implementation telling how to answer when a given cache method fails due to a failing tier
+Loader-writer resilience strategy::
+  Interface implementation telling how to answer if a loader-writer backend fails to answer
+Ledger queue length::
+  How many mutative elements we keep on the client when waiting for the server to come back
+Caching tier behavior in case of failure::
+  How should the caching tier behave when the authoritative tier is gone (clear, server when possible, process updates locally)
+Caching tier behavior in case of reconnect::
+  How should the caching tier behave when reconnecting to the authoritative tier (clear, reconcile, keep)
+
 == What can go wrong
 
 * Server fails to get an answer erratically because of network or something
@@ -44,6 +69,11 @@ of stripping) which act as the authoritative tier.
 This server data can be replicated to other servers called mirrors. How your client will handle being cut from
 the cluster is defined in `ClusteringServiceConfiguration`.
 
+=== Lease
+
+A client have a lease with the server. And there's a heartbeat making sure nobody died. So if the client gets no heartbeat
+from the server, it will decide that it is now on its own. When the heartbeat comes back, it will resume operation.
+
 === Timeouts
 
 If a client doesn't receive an answer in the configured time, it will timeout. This can happen for different reasons
@@ -53,21 +83,14 @@ Three different types of timeouts have been defined.
 
 * Read: Operations reading data from the server
 * Mutative: Operations modifying data on the server
-* Lifecycle: Operations related to the lifecycle like creating and destroying a cache or simply connecting to the server
 
 By default, all are set to 5 seconds.
 
-=== Retries
+Note that there is no lifecyle timeout. It doesn't feel useful. For a cache creation, not being able to create the cache
+means you can't do anything anyway. For destruction, well... we rarely destroy. The leasing will take care of the timeout.
 
-When a client timeouts, it might retry right away. There are two parameters for that:
-
-* Number of retries (default is 0)
-* Sleep time between retries (default is 0)
-
-Note that for each retry, the timeout will be enforced. So, for example, 3 retries with a timeout of 5 seconds and a sleep
-of 1 second will mean 20 seconds before returning.
-
-*Note to myself:* Should the retry be on the resilience strategy?
+Internally, while waiting for the timeout, the client might decide to retry, sleep between retries or do whatever it feels
+useful to provide an answer.
 
 === In case of failure
 
@@ -155,7 +178,9 @@ We can build your own strategy or used other provided ones.
 ==== NOP
 
 This resilience strategy should provide a behaviour similar to a caching that does not cache anything.
-I think this will be favourite default. At least without loader-writer.
+I think this is my favourite default. At least without loader-writer.
+
+You can see it as a cache where everything expires on insertion.
 
 [cols=">s,1*", options="header"]
 |======================================================
